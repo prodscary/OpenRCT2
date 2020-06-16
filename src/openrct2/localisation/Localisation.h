@@ -51,6 +51,9 @@ int32_t get_string_length(const utf8* text);
 money32 string_to_money(const char* string_to_monetise);
 void money_to_string(money32 amount, char* buffer_to_put_value_to, size_t buffer_len, bool forceDecimals);
 
+// The maximum number of characters allowed for string/time conversions (anything above will risk out of range errors)
+#define WAITING_TIME_STRING_MAXLENGTH 10
+
 bool is_user_string_id(rct_string_id stringId);
 
 #define MAX_USER_STRINGS 1024

@@ -424,9 +424,11 @@ static constexpr const uint64_t window_ride_page_enabled_widgets[] = {
         (1ULL << WIDX_LOAD_CHECKBOX) |
         (1ULL << WIDX_LEAVE_WHEN_ANOTHER_ARRIVES_CHECKBOX) |
         (1ULL << WIDX_MINIMUM_LENGTH_CHECKBOX) |
+        (1ULL << WIDX_MINIMUM_LENGTH) |
         (1ULL << WIDX_MINIMUM_LENGTH_INCREASE) |
         (1ULL << WIDX_MINIMUM_LENGTH_DECREASE) |
         (1ULL << WIDX_MAXIMUM_LENGTH_CHECKBOX) |
+        (1ULL << WIDX_MAXIMUM_LENGTH) |
         (1ULL << WIDX_MAXIMUM_LENGTH_INCREASE) |
         (1ULL << WIDX_MAXIMUM_LENGTH_DECREASE) |
         (1ULL << WIDX_SYNCHRONISE_WITH_ADJACENT_STATIONS_CHECKBOX) |
@@ -544,6 +546,7 @@ static void window_ride_operating_resize(rct_window *w);
 static void window_ride_operating_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget *widget);
 static void window_ride_operating_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 static void window_ride_operating_update(rct_window *w);
+static void window_ride_operating_textinput(rct_window* w, rct_widgetindex widgetIndex, char* text);
 static void window_ride_operating_invalidate(rct_window *w);
 static void window_ride_operating_paint(rct_window *w, rct_drawpixelinfo *dpi);
 
@@ -700,7 +703,7 @@ static rct_window_event_list window_ride_operating_events = {
     nullptr,
     nullptr,
     nullptr,
-    nullptr,
+    window_ride_operating_textinput,
     nullptr,
     nullptr,
     nullptr,
@@ -3435,6 +3438,11 @@ static void window_ride_operating_mouseup(rct_window* w, rct_widgetindex widgetI
     if (ride == nullptr)
         return;
 
+    static utf8 _minWaitInputText[WAITING_TIME_STRING_MAXLENGTH];
+    snprintf(_minWaitInputText, WAITING_TIME_STRING_MAXLENGTH, "%d", ride->min_waiting_time);
+    static utf8 _maxWaitInputText[WAITING_TIME_STRING_MAXLENGTH];
+    snprintf(_maxWaitInputText, WAITING_TIME_STRING_MAXLENGTH, "%d", ride->max_waiting_time);
+
     switch (widgetIndex)
     {
         case WIDX_CLOSE:
@@ -3463,9 +3471,19 @@ static void window_ride_operating_mouseup(rct_window* w, rct_widgetindex widgetI
             set_operating_setting(
                 w->number, RideSetSetting::Departure, ride->depart_flags ^ RIDE_DEPART_WAIT_FOR_MINIMUM_LENGTH);
             break;
+        case WIDX_MINIMUM_LENGTH:
+            window_text_input_raw_open(
+                w, WIDX_MINIMUM_LENGTH, STR_ENTER_NEW_VALUE, STR_ENTER_NEW_VALUE, _minWaitInputText,
+                WAITING_TIME_STRING_MAXLENGTH);
+            break;
         case WIDX_MAXIMUM_LENGTH_CHECKBOX:
             set_operating_setting(
                 w->number, RideSetSetting::Departure, ride->depart_flags ^ RIDE_DEPART_WAIT_FOR_MAXIMUM_LENGTH);
+            break;
+        case WIDX_MAXIMUM_LENGTH:
+            window_text_input_raw_open(
+                w, WIDX_MAXIMUM_LENGTH, STR_ENTER_NEW_VALUE, STR_ENTER_NEW_VALUE, _maxWaitInputText,
+                WAITING_TIME_STRING_MAXLENGTH);
             break;
         case WIDX_SYNCHRONISE_WITH_ADJACENT_STATIONS_CHECKBOX:
             set_operating_setting(
@@ -3623,6 +3641,58 @@ static void window_ride_operating_update(rct_window* w)
     {
         ride->window_invalidate_flags &= ~RIDE_INVALIDATE_RIDE_OPERATING;
         w->Invalidate();
+    }
+}
+
+static void window_ride_operating_set_min_waiting_time(rct_window* w, uint8_t time)
+{
+    auto rideSetSetting = RideSetSettingAction(w->number, RideSetSetting::MinWaitingTime, time);
+    GameActions::Execute(&rideSetSetting);
+}
+
+static void window_ride_operating_set_max_waiting_time(rct_window* w, uint8_t time)
+{
+    auto rideSetSetting = RideSetSettingAction(w->number, RideSetSetting::MaxWaitingTime, time);
+    GameActions::Execute(&rideSetSetting);
+}
+
+static void window_ride_operating_textinput(rct_window* w, rct_widgetindex widgetIndex, char* text)
+{
+    if ((widgetIndex != WIDX_MINIMUM_LENGTH && widgetIndex != WIDX_MAXIMUM_LENGTH) || text == nullptr || *text == '\0')
+        return;
+
+    char* hold = text;
+
+    // logic to interpret waiting time text as a number, returns if invalid input
+    if (*text == '-' && *(text + 1) == '\0')
+    {
+        return;
+    }
+    if (*text == '-')
+    {
+        hold++;
+    }
+    while (*hold != '\0')
+    {
+        if (!isdigit(*hold))
+        {
+            return;
+        }
+        hold++;
+    }
+
+    int32_t time32 = std::stoi(text);
+    time32 = std::clamp(time32, 0, 250);
+    uint8_t time = (uint8_t)time32;
+
+    // if widget is min waiting time set it, else set max waiting time
+    if (widgetIndex == WIDX_MINIMUM_LENGTH)
+    {
+        window_ride_operating_set_min_waiting_time(w, time);
+    }
+    else
+    {
+        window_ride_operating_set_max_waiting_time(w, time);
     }
 }
 
