@@ -138,16 +138,21 @@ public:
                     { _coords, _height * COORDS_Z_STEP, zCorner * COORDS_Z_STEP }, &map_set_land_height_clear_func,
                     { 0b1111, 0 }, 0, nullptr, CREATE_CROSSING_MODE_NONE))
             {
+                std::cout << "this is hit for some reason";
                 return std::make_unique<GameActionResult>(
                     GA_ERROR::DISALLOWED, STR_NONE, gGameCommandErrorText, gCommonFormatArgs);
             }
 
-            tileElement = CheckUnremovableObstructions(reinterpret_cast<TileElement*>(surfaceElement), zCorner);
-            if (tileElement != nullptr)
+            std::cout << "style :): " << _style + 0 << " \n";
+            if (false)
             {
-                auto res = MakeResult(GA_ERROR::DISALLOWED, STR_NONE);
-                map_obstruction_set_error_text(tileElement, *res);
-                return res;
+                tileElement = CheckUnremovableObstructions(reinterpret_cast<TileElement*>(surfaceElement), zCorner);
+                if (tileElement != nullptr)
+                {
+                    auto res = MakeResult(GA_ERROR::DISALLOWED, STR_NONE);
+                    map_obstruction_set_error_text(tileElement, *res);
+                    return res;
+                }
             }
         }
         auto res = std::make_unique<GameActionResult>();

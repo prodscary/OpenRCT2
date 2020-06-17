@@ -3661,7 +3661,9 @@ static void window_ride_operating_textinput(rct_window* w, rct_widgetindex widge
     if ((widgetIndex != WIDX_MINIMUM_LENGTH && widgetIndex != WIDX_MAXIMUM_LENGTH) || text == nullptr || *text == '\0')
         return;
 
-    char* hold = text;
+    int32_t time32 = 0;
+    int32_t x = 1;
+    uint8_t count = 0;
 
     // logic to interpret waiting time text as a number, returns if invalid input
     if (*text == '-' && *(text + 1) == '\0')
@@ -3670,18 +3672,28 @@ static void window_ride_operating_textinput(rct_window* w, rct_widgetindex widge
     }
     if (*text == '-')
     {
-        hold++;
+        x *= -1;
+        text++;
     }
-    while (*hold != '\0')
+    while (*text != '\0')
     {
-        if (!isdigit(*hold))
+        if (!isdigit(*text))
         {
             return;
         }
-        hold++;
+        text++;
+        count++;
+    }
+    text--;
+
+    while (count > 0)
+    {
+        time32 += (*text - '0') * x;
+        x *= 10;
+        text--;
+        count--;
     }
 
-    int32_t time32 = std::stoi(text);
     time32 = std::clamp(time32, 0, 250);
     uint8_t time = (uint8_t)time32;
 

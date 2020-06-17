@@ -1455,7 +1455,17 @@ static GameActionResult::Ptr map_can_construct_with_clear_at(
                 if (tileElement != nullptr)
                 {
                     map_obstruction_set_error_text(tileElement, *res);
-                    res->Error = GA_ERROR::NO_CLEARANCE;
+                    if (res->ErrorMessage.GetStringId() == STR_FOOTPATH_IN_THE_WAY)
+                    {
+                        std::cout << reinterpret_cast<PathElement*>(tileElement)->GetSlopeDirection() + 0;
+                        std::cout << "\n";
+                        std::cout << "woe is me\n";
+                        res->Error = GA_ERROR::OK;
+                    }
+                    else
+                    {
+                        res->Error = GA_ERROR::NO_CLEARANCE;
+                    }
                 }
                 return res;
 
