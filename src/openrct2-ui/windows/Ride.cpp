@@ -3668,7 +3668,7 @@ static void window_ride_operating_invalidate(rct_window* w)
     }
 
     window_ride_set_pressed_tab(w);
-
+    //bb
     auto ride = get_ride(w->number);
     if (ride == nullptr)
         return;
